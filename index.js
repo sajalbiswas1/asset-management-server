@@ -11,10 +11,9 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.send("Boss Is Siting");
 });
-console.log("testing 1", process.env.DB_USER, process.env.DB_PASS);
+
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2fbewnn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-console.log("testing", process.env.DB_USER, process.env.DB_PASS);
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -28,6 +27,67 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+
+    const userCollection = client.db("assetManagement").collection("users");
+    const aboutCollection = client.db("assetManagement").collection("about");
+    const packageCollection = client
+      .db("assetManagement")
+      .collection("packages");
+    const assetCollection = client.db("assetManagement").collection("assets");
+    const customCollection = client.db("assetManagement").collection("custom");
+    const requestCollection = client
+      .db("assetManagement")
+      .collection("requests");
+    const teamCollection = client.db("assetManagement").collection("teams");
+
+    //user section
+    app.get("/users", async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
+
+    // user post
+    app.post("/users", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const query = { email: user.email };
+      const existingUser = await userCollection.findOne(query);
+      if (existingUser) {
+        return res.send({ message: "user already exists", insertedId: null });
+      }
+      const result = await userCollection.insertOne(user);
+      console.log(result);
+      res.send(result);
+    });
+
+    app.get("/users/v2", async (req, res) => {
+      let query = {};
+      if (req?.query.team) {
+        query = { email: req.query.team };
+      }
+      const { team } = await userCollection.findOne(query);
+      const query1 = { team: team };
+      const cursor = userCollection.find(query1);
+      const result = await cursor.toArray();
+      console.log(result);
+      res.send(result);
+    });
+
+    // asset
+    app.get("/requests/v4", async (req, res) => {
+      console.log(req.query);
+      let query = {};
+      if (req?.query?.requesterEmail) {
+        query = {
+          requesterEmail: req.query.requesterEmail,
+        };
+      }
+      console.log("Check", query);
+      const cursor = requestCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
@@ -35,7 +95,7 @@ async function run() {
     );
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
