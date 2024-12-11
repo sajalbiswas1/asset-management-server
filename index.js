@@ -49,15 +49,27 @@ async function run() {
     // user post
     app.post("/users", async (req, res) => {
       const user = req.body;
-      console.log(user);
+      // console.log(user);
       const query = { email: user.email };
       const existingUser = await userCollection.findOne(query);
       if (existingUser) {
         return res.send({ message: "user already exists", insertedId: null });
       }
       const result = await userCollection.insertOne(user);
-      console.log(result);
+      // console.log(result);
       res.send(result);
+    });
+
+    app.get("/users/v1", async (req, res) => {
+      let query = {};
+      // console.log(req.query)
+      if (req?.query?.email) {
+        query = { email: req.query.email };
+      }
+      console.log(query);
+      const cursor = await userCollection.findOne(query);
+      res.send(cursor);
+      console.log(cursor);
     });
 
     app.get("/users/v2", async (req, res) => {
@@ -68,6 +80,20 @@ async function run() {
       const { team } = await userCollection.findOne(query);
       const query1 = { team: team };
       const cursor = userCollection.find(query1);
+      const result = await cursor.toArray();
+      // console.log(result);
+      res.send(result);
+    });
+
+    //asset section
+    app.get("/assets", async (req, res) => {
+      let query = {};
+      // console.log(req.query)
+      if (req?.query?.adminEmail) {
+        query = { adminEmail: req.query.adminEmail };
+      }
+      console.log(query);
+      const cursor = assetCollection.find(query);
       const result = await cursor.toArray();
       console.log(result);
       res.send(result);
@@ -82,8 +108,30 @@ async function run() {
           requesterEmail: req.query.requesterEmail,
         };
       }
-      console.log("Check", query);
+
+      app.post("/assets", async (req, res) => {
+        const asset = req.body;
+        console.log(asset);
+        const result = await assetCollection.insertOne(asset);
+        console.log(result);
+        res.send(result);
+      });
+
+      // console.log("Check", query);
       const cursor = requestCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/requests", async (req, res) => {
+      const cursor = requestCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    //custom request list section
+    app.get("/custom", async (req, res) => {
+      const cursor = customCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
